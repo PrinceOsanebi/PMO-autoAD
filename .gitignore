@@ -48,3 +48,4 @@ vault-jenkins-key.pem
 vault-jenkins/pmo-autodiscovery-key.pem
 
 pmo-key.pem
+vault-jenkins-key.pem
