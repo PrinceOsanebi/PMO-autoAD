@@ -22,7 +22,7 @@ variable "port" {
 }
 
 variable "vault_token" {
-  description = "REMOVED_SECRET"
+  description = "hvs.fBv6TGqAdwnAP0pebq1Cu9GA"
   type        = string
   sensitive   = true
 }
