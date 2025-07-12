@@ -16,4 +16,5 @@ terraform {
 
 provider "vault" {
   address = "https://vault.pmolabs.space"
- }
+  token   = "REMOVED_SECRET"
+}
