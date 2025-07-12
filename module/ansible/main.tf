@@ -89,8 +89,7 @@ resource "aws_instance" "ansible-server" {
   key_name               = var.keypair
   subnet_id              = var.subnet_id
   user_data              = local.ansible_userdata
-  monitoring             = true
-
+  
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
