@@ -9,10 +9,10 @@ pipeline {
     triggers {
         pollSCM('* * * * *') // Runs every minute
     }
-    environment {
-        SLACKCHANNEL = 'Prince, OSANEBI Maluabuchukwu'
-        SLACKCREDENTIALS = credentials('slack')
-    }
+    // environment {
+    //     SLACKCHANNEL = 'Prince, OSANEBI Maluabuchukwu'
+    //     SLACKCREDENTIALS = credentials('slack')
+    // }
     
     stages {
         stage('IAC Scan') {
