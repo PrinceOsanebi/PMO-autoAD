@@ -21,11 +21,4 @@ variable "port" {
   description = "Primary container port, toggles with the alternate port (8080 or 8081)."
 }
 
-variable "vault_token" {
-  description = "hvs.fBv6TGqAdwnAP0pebq1Cu9GA"
-  type        = string
-  sensitive   = true
-}
-
-
 
