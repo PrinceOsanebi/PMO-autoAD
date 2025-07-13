@@ -314,6 +314,49 @@ resource "aws_instance" "vault" {
     encrypted   = true
   }
 
+  resource "time_sleep" "wait_3_min" {
+  depends_on      = [aws_instance.vault]
+  create_duration = "300s"
+}
+
+  resource "null_resource" "fetch_token_ssm" {
+  depends_on = [aws_instance.vault, time_sleep.wait_3_min]
+
+  provisioner "local-exec" {
+    interpreter = ["C:/Program Files/Git/bin/bash.exe", "-c"]
+    command     = <<EOT
+aws ssm send-command \
+  --document-name "AWS-RunShellScript" \
+  --comment "Fetch Vault token" \
+  --instance-ids ${aws_instance.vault.id} \
+  --region "eu-west-1" \
+  --parameters 'commands=["cat /home/ubuntu/token.txt"]' \
+  --query "Command.CommandId" \
+  --output text \
+  --profile "pmo-admin" > command_id.txt
+
+sleep 5
+
+aws ssm get-command-invocation \
+  --command-id $(cat command_id.txt) \
+  --instance-id ${aws_instance.vault.id} \
+  --region "eu-west-1" \
+  --query "StandardOutputContent" \
+  --output text \
+  --profile "pmo-admin" > token.txt
+
+rm -f command_id.txt
+EOT
+  }
+
+  provisioner "local-exec" {
+    when        = destroy
+    command     = "del token.txt"
+    interpreter = ["PowerShell", "-Command"]
+  }
+}
+
+
   # User data script to install Jenkins and required tools
   user_data = templatefile("./vault.sh", {
     region        = var.region,
