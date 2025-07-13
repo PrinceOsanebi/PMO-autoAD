@@ -14,8 +14,10 @@ pipeline {
     }
 
     triggers {
-        cron('0 6 * * 1-6')
-        cron('30 7 * * 1-6')
+        cron("""
+            0 6 * * 1-6
+            30 7 * * 1-6
+        """)
     }
 
     environment {
