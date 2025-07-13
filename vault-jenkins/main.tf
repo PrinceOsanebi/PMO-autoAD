@@ -314,12 +314,28 @@ resource "aws_instance" "vault" {
     encrypted   = true
   }
 
-  resource "time_sleep" "wait_3_min" {
+  # User data script to install Jenkins and required tools
+  user_data = templatefile("./vault.sh", {
+    region        = var.region,
+    VAULT_VERSION = "1.18.3",
+    key           = aws_kms_key.vault.id
+  })
+
+  metadata_options {
+    http_tokens = "required"
+  }
+
+  tags = {
+    Name = "${local.name}-vault-server"
+  }
+}
+
+resource "time_sleep" "wait_3_min" {
   depends_on      = [aws_instance.vault]
   create_duration = "300s"
 }
 
-  resource "null_resource" "fetch_token_ssm" {
+resource "null_resource" "fetch_token_ssm" {
   depends_on = [aws_instance.vault, time_sleep.wait_3_min]
 
   provisioner "local-exec" {
@@ -353,23 +369,6 @@ EOT
     when        = destroy
     command     = "del token.txt"
     interpreter = ["PowerShell", "-Command"]
-  }
-}
-
-
-  # User data script to install Jenkins and required tools
-  user_data = templatefile("./vault.sh", {
-    region        = var.region,
-    VAULT_VERSION = "1.18.3",
-    key           = aws_kms_key.vault.id
-  })
-
-  metadata_options {
-    http_tokens = "required"
-  }
-
-  tags = {
-    Name = "${local.name}-vault-server"
   }
 }
 
