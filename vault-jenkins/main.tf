@@ -329,48 +329,52 @@ resource "aws_instance" "vault" {
     Name = "${local.name}-vault-server"
   }
 }
+# --- Wait 3 minutes after Vault instance creation before proceeding ---
+# resource "time_sleep" "wait_3_min" {
+#   depends_on      = [aws_instance.vault]
+#   create_duration = "300s"
+# }
 
-resource "time_sleep" "wait_3_min" {
-  depends_on      = [aws_instance.vault]
-  create_duration = "300s"
-}
+# --- Run a shell script on the Vault instance via SSM to fetch the Vault token ---
+# resource "null_resource" "fetch_token_ssm" {
+#   depends_on = [aws_instance.vault, time_sleep.wait_3_min]
 
-resource "null_resource" "fetch_token_ssm" {
-  depends_on = [aws_instance.vault, time_sleep.wait_3_min]
+#   # --- Execute remote command to fetch the Vault token and store it locally ---
+#   provisioner "local-exec" {
+#     interpreter = ["C:/Program Files/Git/bin/bash.exe", "-c"]
+#     command     = <<EOT
+# aws ssm send-command \
+#   --document-name "AWS-RunShellScript" \
+#   --comment "Fetch Vault token" \
+#   --instance-ids ${aws_instance.vault.id} \
+#   --region "eu-west-1" \
+#   --parameters 'commands=["cat /home/ubuntu/token.txt"]' \
+#   --query "Command.CommandId" \
+#   --output text \
+#   --profile "pmo-admin" > command_id.txt
 
-  provisioner "local-exec" {
-    interpreter = ["C:/Program Files/Git/bin/bash.exe", "-c"]
-    command     = <<EOT
-aws ssm send-command \
-  --document-name "AWS-RunShellScript" \
-  --comment "Fetch Vault token" \
-  --instance-ids ${aws_instance.vault.id} \
-  --region "eu-west-1" \
-  --parameters 'commands=["cat /home/ubuntu/token.txt"]' \
-  --query "Command.CommandId" \
-  --output text \
-  --profile "pmo-admin" > command_id.txt
+# sleep 5
 
-sleep 5
+# aws ssm get-command-invocation \
+#   --command-id $(cat command_id.txt) \
+#   --instance-id ${aws_instance.vault.id} \
+#   --region "eu-west-1" \
+#   --query "StandardOutputContent" \
+#   --output text \
+#   --profile "pmo-admin" > token.txt
 
-aws ssm get-command-invocation \
-  --command-id $(cat command_id.txt) \
-  --instance-id ${aws_instance.vault.id} \
-  --region "eu-west-1" \
-  --query "StandardOutputContent" \
-  --output text \
-  --profile "pmo-admin" > token.txt
+# rm -f command_id.txt
+# EOT
+#   }
 
-rm -f command_id.txt
-EOT
-  }
+#   # --- Clean up token file on destroy ---
+#   provisioner "local-exec" {
+#     when        = destroy
+#     command     = "del token.txt"
+#     interpreter = ["PowerShell", "-Command"]
+#   }
+# }
 
-  provisioner "local-exec" {
-    when        = destroy
-    command     = "del token.txt"
-    interpreter = ["PowerShell", "-Command"]
-  }
-}
 
 # Create security group for Vault (allow port 8200)
 resource "aws_security_group" "vault_sg" {

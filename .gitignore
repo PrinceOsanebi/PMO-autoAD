@@ -49,3 +49,6 @@ vault-jenkins/pmo-autodiscovery-key.pem
 
 pmo-key.pem
 vault-jenkins-key.pem
+
+# Ignore variable definition file
+variable.tf

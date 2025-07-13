@@ -21,4 +21,9 @@ variable "port" {
   description = "Primary container port, toggles with the alternate port (8080 or 8081)."
 }
 
+variable "vault_token" {
+  description = "Vault authentication token"
+  type        = string
+  sensitive   = true
+}
 
