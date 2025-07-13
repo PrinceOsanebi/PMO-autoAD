@@ -70,12 +70,12 @@ resource "aws_launch_template" "prod_lnch_tmpl" {
   instance_type = "t2.medium"
   key_name      = var.key_name
 
-  # user_data = base64encode(templatefile("./module/prod-env/docker-script.sh", {
-  #   nexus_ip   = var.nexus_ip,
-  #   nr_key     = var.nr_key,
-  #   nr_acct_id = var.nr_acct_id,
-  #   port       = var.port
-  # }))
+  user_data = base64encode(templatefile("./module/prod-env/docker-script.sh", {
+    nexus_ip   = var.nexus_ip,
+    nr_key     = var.nr_key,
+    nr_acct_id = var.nr_acct_id,
+    port       = var.port
+  }))
 
   network_interfaces {
     security_groups = [aws_security_group.prod_sg.id]

@@ -69,12 +69,12 @@ resource "aws_launch_template" "bastion-lt" {
     delete_on_termination       = true
     security_groups             = [aws_security_group.bastion_sg.id]
   }
-  # user_data = base64encode(templatefile("./module/bastion/userdata.sh", {
-  #   privatekey = var.privatekey,
-  #   nr_key     = var.nr_key,
-  #   nr_acct_id = var.nr_acct_id,
-  #   region     = var.region
-  # }))
+  user_data = base64encode(templatefile("./module/bastion/userdata.sh", {
+    privatekey = var.privatekey,
+    nr_key     = var.nr_key,
+    nr_acct_id = var.nr_acct_id,
+    region     = var.region
+  }))
 
   tags = {
     Name = "${var.name}-bastion"

@@ -1,0 +1,88 @@
+---
+# Run this playbook to perform blue-green deployment on discovered webservers
+- hosts: webservers
+  become: true
+  vars_files:
+    - ansible_vars_file.yml  # Contains NEXUS_IP and any credentials
+
+  vars:
+    container_name_8080: "appContainer8080"
+    container_name_8081: "appContainer8081"
+    port_8080: 8080
+    port_8081: 8081
+
+  tasks:
+    # Check if a container is running on port 8080
+    - name: Check if container on port 8080 is running
+      command: docker ps -q -f name={{ container_name_8080 }}
+      register: running_8080
+      ignore_errors: yes
+
+    # Check if a container is running on port 8081
+    - name: Check if container on port 8081 is running
+      command: docker ps -q -f name={{ container_name_8081 }}
+      register: running_8081
+      ignore_errors: yes
+
+    # Determine the currently active container and port
+    - name: Set active container/port based on running check
+      set_fact:
+        active_container: >-
+          {% if running_8080.stdout != "" %}{{ container_name_8080 }}
+          {% elif running_8081.stdout != "" %}{{ container_name_8081 }}
+          {% else %}none{% endif %}
+        active_port: >-
+          {% if running_8080.stdout != "" %}{{ port_8080 }}
+          {% elif running_8081.stdout != "" %}{{ port_8081 }}
+          {% else %}none{% endif %}
+
+    # Choose the target container/port for the new deployment
+    - name: Set target container and port for deployment
+      set_fact:
+        target_container: >-
+          {% if active_container == container_name_8080 %}{{ container_name_8081 }}
+          {% else %}{{ container_name_8080 }}{% endif %}
+        target_port: >-
+          {% if active_port == port_8080 %}{{ port_8081 }}
+          {% else %}{{ port_8080 }}{% endif %}
+
+    # Stop current container if one is active
+    - name: Stop currently active container
+      command: docker stop {{ active_container }}
+      when: active_container != "none"
+      ignore_errors: yes
+
+    # Remove the stopped container to avoid conflict
+    - name: Remove stopped container
+      command: docker rm {{ active_container }}
+      when: active_container != "none"
+      ignore_errors: yes
+
+    # Clear the old Docker image for fresh pull
+    - name: Remove old Docker image
+      command: docker rmi "{{ NEXUS_IP }}/petclinicapps:latest"
+      ignore_errors: yes
+
+    # Login to the Nexus Docker Registry
+    - name: Docker login to Nexus registry
+      become_user: ec2-user
+      shell: docker login --username=admin --password=admin123 {{ NEXUS_IP }}
+
+    # Pull the latest image from Nexus
+    - name: Pull updated image from Nexus
+      become_user: ec2-user
+      shell: docker pull "{{ NEXUS_IP }}/petclinicapps:latest"
+
+    # Run the new Docker container on the selected port
+    - name: Start new container on target port
+      become_user: ec2-user
+      shell: >
+        docker run -it -d
+        --name {{ target_container }}
+        -p {{ target_port }}:8080
+        "{{ NEXUS_IP }}/petclinicapps:latest"
+
+    # Show summary of what was done
+    - name: Output deployment summary
+      debug:
+        msg: "Deployed {{ target_container }} on port {{ target_port }}. Previously active: {{ active_container }} ({{ active_port }})"
