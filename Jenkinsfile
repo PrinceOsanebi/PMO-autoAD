@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        terraform 'terraform'    # Terraform installation configured in Jenkins
+        terraform 'terraform'
     }
 
     parameters {
@@ -14,13 +14,13 @@ pipeline {
     }
 
     triggers {
-        cron('0 6 * * 1-6')     # 6:00 AM Monday to Saturday - scheduled apply
-        cron('30 7 * * 1-6')    # 7:30 AM Monday to Saturday - scheduled destroy
+        cron('0 6 * * 1-6')
+        cron('30 7 * * 1-6')
     }
 
     environment {
-        SLACKCHANNEL = 'D08B6M53SHH'            # Slack channel for notifications
-        SLACKCREDENTIALS = credentials('slack') # Slack credentials stored in Jenkins
+        SLACKCHANNEL = 'D08B6M53SHH'
+        SLACKCREDENTIALS = credentials('slack')
     }
 
     stages {
@@ -28,31 +28,21 @@ pipeline {
         stage('Determine Action') {
             steps {
                 script {
-                    # ----------------------------------------------
-                    # Determine Scheduled Action Based on Current Time
-                    # ----------------------------------------------
                     def scheduledAction = null
                     def now = new Date()
-
-                    # Get current time details in Europe/London timezone
                     def hour = now.format('H', TimeZone.getTimeZone('Europe/London')) as Integer
                     def minute = now.format('m', TimeZone.getTimeZone('Europe/London')) as Integer
-                    def dayOfWeek = now.format('u', TimeZone.getTimeZone('Europe/London')) as Integer  # 1=Mon ... 7=Sun
+                    def dayOfWeek = now.format('u', TimeZone.getTimeZone('Europe/London')) as Integer
 
-                    # Set scheduled action if Mon-Sat and matching times
                     if (dayOfWeek >= 1 && dayOfWeek <= 6) {
                         if (hour == 6 && minute == 0) {
-                            scheduledAction = 'apply'      # Scheduled apply at 6:00 AM
+                            scheduledAction = 'apply'
                         } else if (hour == 7 && minute == 30) {
-                            scheduledAction = 'destroy'    # Scheduled destroy at 7:30 AM
+                            scheduledAction = 'destroy'
                         }
                     }
 
-                    # ----------------------------------------------
-                    # Determine If Triggered by Cron or Manual
-                    # ----------------------------------------------
                     if (currentBuild.rawBuild.getCause(hudson.triggers.TimerTrigger.TimerTriggerCause) != null) {
-                        # Triggered by cron job
                         if (scheduledAction == null) {
                             error("Build triggered by cron but no matching scheduled action found.")
                         } else {
@@ -60,7 +50,6 @@ pipeline {
                             echo "Cron trigger detected. Using scheduled action: ${env.ACTION}"
                         }
                     } else {
-                        # Manual trigger, use user-selected action parameter
                         env.ACTION = params.action
                         echo "Manual trigger detected. Using user-selected action: ${env.ACTION}"
                     }
@@ -71,18 +60,12 @@ pipeline {
         stage('IAC Scan') {
             steps {
                 script {
-                    # ----------------------------------------------
-                    # Infrastructure as Code Security Scan using Checkov
-                    # ----------------------------------------------
                     sh 'pip install pipenv'
                     sh 'pipenv run pip install checkov'
-
                     def checkovStatus = sh(
                         script: 'pipenv run checkov -d . -o cli --output-file checkov-results.txt --quiet',
                         returnStatus: true
                     )
-
-                    # Publish results even if empty
                     junit allowEmptyResults: true, testResults: 'checkov-results.txt'
                 }
             }
@@ -90,36 +73,24 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                # ----------------------------------------------
-                # Initialize Terraform workspace
-                # ----------------------------------------------
                 sh 'terraform init'
             }
         }
 
         stage('Terraform format') {
             steps {
-                # ----------------------------------------------
-                # Format Terraform configuration files
-                # ----------------------------------------------
                 sh 'terraform fmt --recursive'
             }
         }
 
         stage('Terraform validate') {
             steps {
-                # ----------------------------------------------
-                # Validate Terraform files for correctness
-                # ----------------------------------------------
                 sh 'terraform validate'
             }
         }
 
         stage('Terraform plan') {
             steps {
-                # ----------------------------------------------
-                # Generate Terraform execution plan
-                # ----------------------------------------------
                 sh "terraform plan -out=tfplan"
             }
         }
@@ -127,9 +98,6 @@ pipeline {
         stage('Terraform action') {
             steps {
                 script {
-                    # ----------------------------------------------
-                    # Apply or Destroy Terraform infra based on ACTION
-                    # ----------------------------------------------
                     sh "terraform ${env.ACTION} -auto-approve"
                 }
             }
@@ -139,9 +107,6 @@ pipeline {
     post {
         always {
             script {
-                # ----------------------------------------------
-                # Send Slack notification for any build completion
-                # ----------------------------------------------
                 slackSend(
                     channel: SLACKCHANNEL,
                     color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger',
@@ -151,9 +116,6 @@ pipeline {
         }
 
         failure {
-            # ----------------------------------------------
-            # Send Slack notification if build fails
-            # ----------------------------------------------
             slackSend(
                 channel: SLACKCHANNEL,
                 color: 'danger',
@@ -162,9 +124,6 @@ pipeline {
         }
 
         success {
-            # ----------------------------------------------
-            # Send Slack notification if build succeeds
-            # ----------------------------------------------
             slackSend(
                 channel: SLACKCHANNEL,
                 color: 'good',
@@ -172,4 +131,4 @@ pipeline {
             )
         }
     }
-} 
+}
