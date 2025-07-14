@@ -16,5 +16,5 @@ terraform {
 
 provider "vault" {
   address = "https://vault.pmolabs.space"
-  token   = "hvs.vvBxlDNcBn75URYGKbXR5Akx"
+  token   = "hvs.BnqWb4cL4AAaJDMb7Jv3Bc8L"
 }
