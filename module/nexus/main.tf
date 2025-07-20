@@ -173,24 +173,28 @@ resource "aws_instance" "Nexus-server" {
   iam_instance_profile        = aws_iam_instance_profile.nexus_profile.name
   associate_public_ip_address = true
 
-
   tags = {
     Name = "${var.name}-nexus-server"
   }
 }
+
 resource "null_resource" "update_jenkins" {
   depends_on = [aws_instance.Nexus-server]
 
   provisioner "local-exec" {
     command = <<-EOF
 #!/bin/bash
+echo "Sleeping 60 seconds to wait for Nexus server to be ready..."
+sleep 60
+
 sudo cat <<EOT>> /etc/docker/daemon.json
-  {
-    "insecure-registries" : ["${aws_instance.Nexus-server.public_ip}:8085"]
-  }
+{
+  "insecure-registries" : ["${aws_instance.Nexus-server.public_ip}:8085"]
+}
 EOT
+
 sudo systemctl restart docker
 EOF
-  interpreter = [ "bash", "-c" ]
-  } 
+    interpreter = [ "bash", "-c" ]
+  }
 }
