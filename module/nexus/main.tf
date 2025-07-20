@@ -187,7 +187,7 @@ resource "null_resource" "update_jenkins" {
 echo "Sleeping 60 seconds to wait for Nexus server to be ready..."
 sleep 60
 
-sudo cat <<EOT>> /etc/docker/daemon.json
+sudo tee /etc/docker/daemon.json > /dev/null <<EOT
 {
   "insecure-registries" : ["${aws_instance.Nexus-server.public_ip}:8085"]
 }
