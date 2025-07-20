@@ -66,7 +66,7 @@
     # Login to the Nexus Docker Registry
     - name: Docker login to Nexus registry
       become_user: ec2-user
-      shell: docker login --username=admin --password=admin {{ NEXUS_IP }}
+      shell: docker login --username=admin --password=admin123 {{ NEXUS_IP }}
 
     # Pull the latest image from Nexus
     - name: Pull updated image from Nexus
