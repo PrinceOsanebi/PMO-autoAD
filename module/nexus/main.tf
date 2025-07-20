@@ -182,15 +182,15 @@ resource "null_resource" "update_jenkins" {
   depends_on = [aws_instance.Nexus-server]
 
   provisioner "local-exec" {
-  command = <<-EOF
+    command = <<-EOF
 #!/bin/bash
-set -e
-sudo tee /etc/docker/daemon.json > /dev/null <<EOT
-{
-  "insecure-registries": ["${aws_instance.Nexus-server.public_ip}:8085"]
-}
+sudo cat <<EOT>> /etc/docker/daemon.json
+  {
+    "insecure-registries" : ["${aws_instance.Nexus-server.public_ip}:8085"]
+  }
 EOT
 sudo systemctl restart docker
 EOF
-  interpreter = ["bash", "-c"]
+  interpreter = [ "bash", "-c" ]
+  } 
 }
