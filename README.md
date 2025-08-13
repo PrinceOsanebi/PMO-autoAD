@@ -92,6 +92,7 @@ Operational Visibility: Proactive monitoring and alerting foster a culture of co
 Scalable & Future-Proof: Modular design supports evolving application architectures and cloud strategies.
 
 Project Structure:
+
 ├── ansible/            # Ansible roles and playbooks for configuration and deployment.
 
 ├── bastion/            # Bastion host setup for secure access.
