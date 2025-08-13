@@ -92,24 +92,41 @@ Operational Visibility: Proactive monitoring and alerting foster a culture of co
 Scalable & Future-Proof: Modular design supports evolving application architectures and cloud strategies.
 
 Project Structure:
-├── ansible/            # Ansible roles and playbooks for configuration and deployment
-├── bastion/            # Bastion host setup for secure access
-├── database/           # RDS and database provisioning modules
-├── nexus/              # Nexus registry deployment and configuration
-├── prod-env/           # Production environment Terraform and config
-├── stage-env/          # Staging environment Terraform and config
-├── sonarqube/          # SonarQube server setup and integration
-├── vpc/                # VPC, subnets, and networking setup
-├── vault-jenkins/      # Remote state and Jenkins pipeline vault secrets
-├── .gitignore          # Git ignore rules
-├── Jenkinsfile         # Jenkins pipeline definition
-├── README.md           # Project documentation
-├── create-remote-state.sh  # Script for initializing Terraform remote state
-├── destroy-remote-state.sh # Script for cleaning remote state
-├── main.tf             # Root Terraform configuration
-├── output.tf           # Terraform output definitions
-├── provider.tf         # Terraform AWS provider config
-├── variable.tf         # Terraform variable definitions
+├── ansible/            # Ansible roles and playbooks for configuration and deployment.
+
+├── bastion/            # Bastion host setup for secure access.
+
+├── database/           # RDS and database provisioning modules.
+
+├── nexus/              # Nexus registry deployment and configuration.
+
+├── prod-env/           # Production environment Terraform and config.
+
+├── stage-env/          # Staging environment Terraform and config.
+
+├── sonarqube/          # SonarQube server setup and integration.
+
+├── vpc/                # VPC, subnets, and networking setup.
+
+├── vault-jenkins/      # Remote state and Jenkins pipeline vault secrets.
+
+├── .gitignore          # Git ignore rules.
+
+├── Jenkinsfile         # Jenkins pipeline definition.
+
+├── README.md           # Project documentation.
+
+├── create-remote-state.sh  # Script for initializing Terraform remote state.
+
+├── destroy-remote-state.sh # Script for cleaning remote state.
+
+├── main.tf             # Root Terraform configuration.
+
+├── output.tf           # Terraform output definitions.
+
+├── provider.tf         # Terraform AWS provider config.
+
+├── variable.tf         # Terraform variable definitions.
 
 Getting Started
 Initialize Remote State: Run create-remote-state.sh to provision the Terraform backend with locking and state management.
