@@ -1,5 +1,7 @@
 Enterprise-Grade Java Application Automation Framework.
+
 Executive Summary:
+
 In today’s competitive digital landscape, rapid, secure, and reliable deployment of enterprise-grade Java applications is essential. 
 
 This project delivers a cutting-edge, enterprise-grade automation framework designed specifically for provisioning and deploying a Java-based application environment at scale. Leveraging best-in-class tools and cloud-native technologies, it empowers organizations to achieve rapid, reliable, and secure delivery of complex Java applications with zero downtime.
