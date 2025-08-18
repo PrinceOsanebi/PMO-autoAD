@@ -89,14 +89,14 @@
 
 
 pipeline {
-    agent any # Run the pipeline on any available Jenkins agent
+    agent any // Run the pipeline on any available Jenkins agent
 
     tools {
-        terraform 'terraform' # Use the Terraform installation configured in Jenkins global tools
+        terraform 'terraform' // Use the Terraform installation configured in Jenkins global tools
     }
 
     parameters {
-        # Dropdown menu for manual runs to choose 'apply' or 'destroy'
+        // Dropdown menu for manual runs to choose 'apply' or 'destroy'
         choice(
             name: 'action',
             choices: ['apply', 'destroy'],
@@ -105,13 +105,13 @@ pipeline {
     }
 
     triggers {
-        # Schedule to run at 6:00 AM and 7:30 PM Monday–Saturday (Europe/Dublin time)
+        // Schedule to run at 6:00 AM and 7:30 PM Monday–Saturday (Europe/Dublin time)
         cron('0 6 * * 1-6\n30 19 * * 1-6')
     }
 
     environment {
-        SLACKCHANNEL = 'D08B6M53SHH' # Slack channel ID for notifications
-        SLACKCREDENTIALS = credentials('slack') # Slack credentials stored securely in Jenkins
+        SLACKCHANNEL = 'D08B6M53SHH' // Slack channel ID for notifications
+        SLACKCREDENTIALS = credentials('slack') // Slack credentials stored securely in Jenkins
     }
 
     stages {
@@ -119,34 +119,34 @@ pipeline {
         stage('Determine Action') {
             steps {
                 script {
-                    def scheduledAction = null # Store the scheduled action based on time
-                    def now = new Date() # Get current date/time
-                    def tz = TimeZone.getTimeZone('Europe/Dublin') # Timezone setting
-                    def hour = now.format('H', tz) as Integer # Extract current hour
-                    def minute = now.format('m', tz) as Integer # Extract current minute
-                    def dayOfWeek = now.format('u', tz) as Integer # Day of week (1=Mon, 7=Sun)
+                    def scheduledAction = null // Store the scheduled action based on time
+                    def now = new Date() // Get current date/time
+                    def tz = TimeZone.getTimeZone('Europe/Dublin') // Timezone setting
+                    def hour = now.format('H', tz) as Integer // Extract current hour
+                    def minute = now.format('m', tz) as Integer // Extract current minute
+                    def dayOfWeek = now.format('u', tz) as Integer // Day of week (1=Mon, 7=Sun)
 
-                    # If between Monday and Saturday, check scheduled times
+                    // If between Monday and Saturday, check scheduled times
                     if (dayOfWeek >= 1 && dayOfWeek <= 6) {
                         if (hour == 6 && minute == 0) {
-                            scheduledAction = 'apply' # Morning run → deploy/apply infrastructure
+                            scheduledAction = 'apply' // Morning run → deploy/apply infrastructure
                         } else if (hour == 19 && minute == 30) {
-                            scheduledAction = 'destroy' # Evening run → tear down infrastructure
+                            scheduledAction = 'destroy' // Evening run → tear down infrastructure
                         }
                     }
 
-                    def causes = currentBuild.getBuildCauses() # Get what triggered this build
-                    def isTimerTriggered = causes.any { it._class?.contains('TimerTriggerCause') } # Check if cron
+                    def causes = currentBuild.getBuildCauses() // Get what triggered this build
+                    def isTimerTriggered = causes.any { it._class?.contains('TimerTriggerCause') } // Check if cron
 
                     if (isTimerTriggered) {
                         if (scheduledAction == null) {
-                            error("Build triggered by cron but no matching scheduled action found.") # Fail if time doesn't match expected schedule
+                            error("Build triggered by cron but no matching scheduled action found.") // Fail if time doesn't match expected schedule
                         } else {
-                            env.ACTION = scheduledAction # Assign action from schedule
+                            env.ACTION = scheduledAction // Assign action from schedule
                             echo "Cron trigger detected. Using scheduled action: ${env.ACTION}"
                         }
                     } else {
-                        env.ACTION = params.action # Use manual selection
+                        env.ACTION = params.action // Use manual selection
                         echo "Manual trigger detected. Using user-selected action: ${env.ACTION}"
                     }
                 }
@@ -156,48 +156,48 @@ pipeline {
         stage('IAC Scan') {
             steps {
                 script {
-                    sh 'pip install pipenv' # Install pipenv for isolated Python dependencies
-                    sh 'pipenv run pip install checkov' # Install Checkov for IaC security scanning
+                    sh 'pip install pipenv' // Install pipenv for isolated Python dependencies
+                    sh 'pipenv run pip install checkov' // Install Checkov for IaC security scanning
 
-                    # Run Checkov scan and save output to file
+                    // Run Checkov scan and save output to file
                     def checkovStatus = sh(
                         script: 'pipenv run checkov -d . -o cli --output-file checkov-results.txt --quiet',
                         returnStatus: true
                     )
 
-                    junit allowEmptyResults: true, testResults: 'checkov-results.txt' # Publish scan results in Jenkins
+                    junit allowEmptyResults: true, testResults: 'checkov-results.txt' // Publish scan results in Jenkins
                 }
             }
         }
 
         stage('Terraform Init') {
             steps {
-                sh 'terraform init' # Initialize Terraform backend and providers
+                sh 'terraform init' // Initialize Terraform backend and providers
             }
         }
 
         stage('Terraform format') {
             steps {
-                sh 'terraform fmt --recursive' # Format all Terraform files recursively
+                sh 'terraform fmt --recursive' // Format all Terraform files recursively
             }
         }
 
         stage('Terraform validate') {
             steps {
-                sh 'terraform validate' # Validate Terraform configuration syntax and references
+                sh 'terraform validate' // Validate Terraform configuration syntax and references
             }
         }
 
         stage('Terraform plan') {
             steps {
-                sh "terraform plan -out=tfplan" # Generate execution plan and save it
+                sh "terraform plan -out=tfplan" // Generate execution plan and save it
             }
         }
 
         stage('Terraform action') {
             steps {
                 script {
-                    sh "terraform ${env.ACTION} -auto-approve" # Execute chosen Terraform action without manual approval
+                    sh "terraform ${env.ACTION} -auto-approve" // Execute chosen Terraform action without manual approval
                 }
             }
         }
@@ -206,7 +206,7 @@ pipeline {
     post {
         always {
             script {
-                # Send notification to Slack regardless of build result
+                // Send notification to Slack regardless of build result
                 slackSend(
                     channel: SLACKCHANNEL,
                     color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger',
@@ -216,7 +216,7 @@ pipeline {
         }
 
         failure {
-            # Notify Slack on failure
+            // Notify Slack on failure
             slackSend(
                 channel: SLACKCHANNEL,
                 color: 'danger',
@@ -225,7 +225,7 @@ pipeline {
         }
 
         success {
-            # Notify Slack on success
+            // Notify Slack on success
             slackSend(
                 channel: SLACKCHANNEL,
                 color: 'good',
