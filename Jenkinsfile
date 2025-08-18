@@ -119,12 +119,12 @@ pipeline {
         stage('Determine Action') {
             steps {
                 script {
-                    def scheduledAction = null // Store the scheduled action based on time
-                    def now = new Date() // Get current date/time
-                    def tz = TimeZone.getTimeZone('Europe/Dublin') // Timezone setting
-                    def hour = now.format('H', tz) as Integer // Extract current hour
-                    def minute = now.format('m', tz) as Integer // Extract current minute
-                    def dayOfWeek = now.format('u', tz) as Integer // Day of week (1=Mon, 7=Sun)
+                    def scheduledAction = null
+                    def now = new Date()
+                    def tz = TimeZone.getTimeZone('Europe/Dublin')
+                    def hour = now.format('H', tz) as Integer
+                    def minute = now.format('m', tz) as Integer
+                    def dayOfWeek = now.format('u', tz) as Integer
 
                     // If between Monday and Saturday, check scheduled times
                     if (dayOfWeek >= 1 && dayOfWeek <= 6) {
@@ -135,18 +135,18 @@ pipeline {
                         }
                     }
 
-                    def causes = currentBuild.getBuildCauses() // Get what triggered this build
-                    def isTimerTriggered = causes.any { it._class?.contains('TimerTriggerCause') } // Check if cron
+                    def causes = currentBuild.getBuildCauses()
+                    def isTimerTriggered = causes.any { it._class?.contains('TimerTriggerCause') }
 
                     if (isTimerTriggered) {
                         if (scheduledAction == null) {
-                            error("Build triggered by cron but no matching scheduled action found.") // Fail if time doesn't match expected schedule
+                            error("Build triggered by cron but no matching scheduled action found.")
                         } else {
-                            env.ACTION = scheduledAction // Assign action from schedule
+                            env.ACTION = scheduledAction
                             echo "Cron trigger detected. Using scheduled action: ${env.ACTION}"
                         }
                     } else {
-                        env.ACTION = params.action // Use manual selection
+                        env.ACTION = params.action
                         echo "Manual trigger detected. Using user-selected action: ${env.ACTION}"
                     }
                 }
@@ -156,48 +156,54 @@ pipeline {
         stage('IAC Scan') {
             steps {
                 script {
-                    sh 'pip install pipenv' // Install pipenv for isolated Python dependencies
-                    sh 'pipenv run pip install checkov' // Install Checkov for IaC security scanning
+                    sh '''
+                        # Install dependencies
+                        pip install --user pipenv
+                        pipenv run pip install checkov
 
-                    // Run Checkov scan and save output to file
-                    def checkovStatus = sh(
-                        script: 'pipenv run checkov -d . -o cli --output-file checkov-results.txt --quiet',
-                        returnStatus: true
-                    )
+                        # Run Checkov scan with JUnit output
+                        pipenv run checkov -d . \
+                            --output junitxml \
+                            --output-file checkov-results.xml || true
+                    '''
 
-                    junit allowEmptyResults: true, testResults: 'checkov-results.txt' // Publish scan results in Jenkins
+                    // Publish Checkov results in Jenkins
+                    junit allowEmptyResults: true, testResults: 'checkov-results.xml'
                 }
             }
         }
 
         stage('Terraform Init') {
             steps {
-                sh 'terraform init' // Initialize Terraform backend and providers
+                sh '''
+                    echo "Initializing Terraform..."
+                    terraform init || exit 1
+                '''
             }
         }
 
         stage('Terraform format') {
             steps {
-                sh 'terraform fmt --recursive' // Format all Terraform files recursively
+                sh 'terraform fmt --recursive'
             }
         }
 
         stage('Terraform validate') {
             steps {
-                sh 'terraform validate' // Validate Terraform configuration syntax and references
+                sh 'terraform validate'
             }
         }
 
         stage('Terraform plan') {
             steps {
-                sh "terraform plan -out=tfplan" // Generate execution plan and save it
+                sh 'terraform plan -out=tfplan'
             }
         }
 
         stage('Terraform action') {
             steps {
                 script {
-                    sh "terraform ${env.ACTION} -auto-approve" // Execute chosen Terraform action without manual approval
+                    sh "terraform ${env.ACTION} -auto-approve"
                 }
             }
         }
